@@ -1,0 +1,1 @@
+# Selenium UI tests package

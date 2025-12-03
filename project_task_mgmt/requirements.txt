@@ -1,0 +1,37 @@
+# Django Project Task Management System - Requirements
+
+# Core Django
+Django==4.2.7
+python-decouple==3.8
+
+# Database
+psycopg2-binary==2.9.9  # PostgreSQL adapter (for production)
+
+# Django REST Framework
+djangorestframework==3.14.0
+django-filter==23.3
+
+# JWT Authentication
+djangorestframework-simplejwt==5.3.0
+
+# API Documentation
+drf-yasg==1.21.7
+
+# CORS Headers
+django-cors-headers==4.3.0
+
+# Image Processing
+Pillow==10.1.0
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Testing Tools
+coverage==7.3.2
+pytest==7.4.3
+pytest-django==4.7.0
+factory-boy==3.3.0
+
+# Development Tools (optional)
+django-debug-toolbar==4.2.0
