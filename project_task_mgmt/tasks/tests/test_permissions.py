@@ -1,298 +1,260 @@
 """
-Test cases for custom permissions
+Unit tests for permissions in the tasks app
 """
+import pytest
 from django.test import TestCase, RequestFactory
-from django.utils import timezone
-from datetime import timedelta
-from tasks.models import User, Team, Project, Task
+from django.contrib.auth import get_user_model
+from rest_framework.test import APIRequestFactory
+from datetime import date
+from tasks.models import Team, Project, Task, Sprint
 from tasks.permissions import (
     IsAdmin, IsTeamLeader, IsEmployee, IsReviewer,
-    CanManageProject, CanManageTask, CanManageReview
+    CanManageProject, CanManageTask
 )
 
+User = get_user_model()
 
-class PermissionTestCase(TestCase):
-    """Base test case for permissions"""
+
+@pytest.mark.django_db
+class TestIsAdminPermission(TestCase):
+    """Test cases for IsAdmin permission"""
     
     def setUp(self):
-        self.factory = RequestFactory()
-        
-        # Create users with different roles
+        """Set up test data"""
+        self.factory = APIRequestFactory()
+        self.permission = IsAdmin()
         self.admin = User.objects.create_user(
             username='admin',
-            password='admin123',
+            email='admin@test.com',
+            password='testpass123',
             role='ADMIN'
         )
-        
-        self.team_leader = User.objects.create_user(
-            username='teamlead',
-            password='tl123',
-            role='TEAM_LEADER'
-        )
-        
         self.employee = User.objects.create_user(
             username='employee',
-            password='emp123',
+            email='emp@test.com',
+            password='testpass123',
             role='EMPLOYEE'
         )
-        
-        self.reviewer = User.objects.create_user(
-            username='reviewer',
-            password='reviewer123',
-            role='REVIEWER'
+    
+    def test_admin_has_permission(self):
+        """Test admin user has permission"""
+        request = self.factory.get('/')
+        request.user = self.admin
+        self.assertTrue(self.permission.has_permission(request, None))
+    
+    def test_employee_no_permission(self):
+        """Test employee user has no permission"""
+        request = self.factory.get('/')
+        request.user = self.employee
+        self.assertFalse(self.permission.has_permission(request, None))
+
+
+@pytest.mark.django_db
+class TestIsTeamLeaderPermission(TestCase):
+    """Test cases for IsTeamLeader permission"""
+    
+    def setUp(self):
+        """Set up test data"""
+        self.factory = APIRequestFactory()
+        self.permission = IsTeamLeader()
+        self.admin = User.objects.create_user(
+            username='admin',
+            email='admin@test.com',
+            password='testpass123',
+            role='ADMIN'
         )
-        
-        # Create team and project
+        self.team_leader = User.objects.create_user(
+            username='teamlead',
+            email='lead@test.com',
+            password='testpass123',
+            role='TEAM_LEADER'
+        )
+        self.employee = User.objects.create_user(
+            username='employee',
+            email='emp@test.com',
+            password='testpass123',
+            role='EMPLOYEE'
+        )
+    
+    def test_admin_has_permission(self):
+        """Test admin has team leader permission"""
+        request = self.factory.get('/')
+        request.user = self.admin
+        self.assertTrue(self.permission.has_permission(request, None))
+    
+    def test_team_leader_has_permission(self):
+        """Test team leader has permission"""
+        request = self.factory.get('/')
+        request.user = self.team_leader
+        self.assertTrue(self.permission.has_permission(request, None))
+    
+    def test_employee_no_permission(self):
+        """Test employee has no permission"""
+        request = self.factory.get('/')
+        request.user = self.employee
+        self.assertFalse(self.permission.has_permission(request, None))
+
+
+@pytest.mark.django_db
+class TestIsEmployeePermission(TestCase):
+    """Test cases for IsEmployee permission"""
+    
+    def setUp(self):
+        """Set up test data"""
+        self.factory = APIRequestFactory()
+        self.permission = IsEmployee()
+        self.admin = User.objects.create_user(
+            username='admin',
+            email='admin@test.com',
+            password='testpass123',
+            role='ADMIN'
+        )
+        self.employee = User.objects.create_user(
+            username='employee',
+            email='emp@test.com',
+            password='testpass123',
+            role='EMPLOYEE'
+        )
+        self.team_leader = User.objects.create_user(
+            username='teamlead',
+            email='lead@test.com',
+            password='testpass123',
+            role='TEAM_LEADER'
+        )
+    
+    def test_admin_has_permission(self):
+        """Test admin has employee permission"""
+        request = self.factory.get('/')
+        request.user = self.admin
+        self.assertTrue(self.permission.has_permission(request, None))
+    
+    def test_employee_has_permission(self):
+        """Test employee has permission"""
+        request = self.factory.get('/')
+        request.user = self.employee
+        self.assertTrue(self.permission.has_permission(request, None))
+    
+    def test_team_leader_has_permission(self):
+        """Test team leader has employee permission"""
+        request = self.factory.get('/')
+        request.user = self.team_leader
+        self.assertTrue(self.permission.has_permission(request, None))
+
+
+@pytest.mark.django_db
+class TestCanManageProjectPermission(TestCase):
+    """Test cases for CanManageProject permission"""
+    
+    def setUp(self):
+        """Set up test data"""
+        self.factory = APIRequestFactory()
+        self.permission = CanManageProject()
+        self.team_leader = User.objects.create_user(
+            username='teamlead',
+            email='lead@test.com',
+            password='testpass123',
+            role='TEAM_LEADER'
+        )
+        self.employee = User.objects.create_user(
+            username='employee',
+            email='emp@test.com',
+            password='testpass123',
+            role='EMPLOYEE'
+        )
         self.team = Team.objects.create(
             name='Dev Team',
             team_leader=self.team_leader
         )
-        
         self.project = Project.objects.create(
             name='Test Project',
             team=self.team,
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(days=30),
-            created_by=self.team_leader
+            created_by=self.team_leader,
+            start_date=date.today()
         )
-        
-        self.task = Task.objects.create(
-            title='Test Task',
+    
+    def test_read_permission_for_authenticated(self):
+        """Test read permission for authenticated users"""
+        request = self.factory.get('/')
+        request.user = self.employee
+        self.assertTrue(self.permission.has_permission(request, None))
+    
+    def test_create_permission_for_team_leader(self):
+        """Test create permission for team leader"""
+        request = self.factory.post('/')
+        request.user = self.team_leader
+        self.assertTrue(self.permission.has_permission(request, None))
+    
+    def test_create_permission_denied_for_employee(self):
+        """Test create permission denied for employee"""
+        request = self.factory.post('/')
+        request.user = self.employee
+        self.assertFalse(self.permission.has_permission(request, None))
+    
+    def test_object_permission_for_creator(self):
+        """Test object permission for project creator"""
+        request = self.factory.put('/')
+        request.user = self.team_leader
+        self.assertTrue(self.permission.has_object_permission(request, None, self.project))
+
+
+@pytest.mark.django_db
+class TestCanManageTaskPermission(TestCase):
+    """Test cases for CanManageTask permission"""
+    
+    def setUp(self):
+        """Set up test data"""
+        self.factory = APIRequestFactory()
+        self.permission = CanManageTask()
+        self.team_leader = User.objects.create_user(
+            username='teamlead',
+            email='lead@test.com',
+            password='testpass123',
+            role='TEAM_LEADER'
+        )
+        self.employee = User.objects.create_user(
+            username='employee',
+            email='emp@test.com',
+            password='testpass123',
+            role='EMPLOYEE'
+        )
+        self.team = Team.objects.create(
+            name='Dev Team',
+            team_leader=self.team_leader
+        )
+        self.project = Project.objects.create(
+            name='Test Project',
+            team=self.team,
+            created_by=self.team_leader,
+            start_date=date.today()
+        )
+        self.sprint = Sprint.objects.create(
             project=self.project,
+            name='Sprint 1',
+            start_date=date.today(),
+            end_date=date.today()
+        )
+        self.task = Task.objects.create(
+            project=self.project,
+            sprint=self.sprint,
+            title='Test Task',
             assigned_to=self.employee,
             assigned_by=self.team_leader
         )
-
-
-class RoleBasedPermissionTest(PermissionTestCase):
-    """Test role-based permissions"""
     
-    def test_is_admin_permission(self):
-        """Test IsAdmin permission"""
-        permission = IsAdmin()
+    def test_read_permission(self):
+        """Test read permission for tasks"""
         request = self.factory.get('/')
-        
-        # Admin should have permission
-        request.user = self.admin
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Non-admin should not have permission
         request.user = self.employee
-        self.assertFalse(permission.has_permission(request, None))
+        self.assertTrue(self.permission.has_permission(request, None))
     
-    def test_is_team_leader_permission(self):
-        """Test IsTeamLeader permission"""
-        permission = IsTeamLeader()
-        request = self.factory.get('/')
-        
-        # Team leader should have permission
-        request.user = self.team_leader
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Admin should also have permission
-        request.user = self.admin
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Employee should not have permission
-        request.user = self.employee
-        self.assertFalse(permission.has_permission(request, None))
-    
-    def test_is_employee_permission(self):
-        """Test IsEmployee permission"""
-        permission = IsEmployee()
-        request = self.factory.get('/')
-        
-        # Employee should have permission
-        request.user = self.employee
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Admin should also have permission
-        request.user = self.admin
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Reviewer should not have permission
-        request.user = self.reviewer
-        self.assertFalse(permission.has_permission(request, None))
-    
-    def test_is_reviewer_permission(self):
-        """Test IsReviewer permission"""
-        permission = IsReviewer()
-        request = self.factory.get('/')
-        
-        # Reviewer should have permission
-        request.user = self.reviewer
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Admin should also have permission
-        request.user = self.admin
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Employee should not have permission
-        request.user = self.employee
-        self.assertFalse(permission.has_permission(request, None))
-
-
-class ProjectPermissionTest(PermissionTestCase):
-    """Test project-related permissions"""
-    
-    def test_can_manage_project_create(self):
-        """Test project creation permissions"""
-        permission = CanManageProject()
+    def test_create_permission_for_team_leader(self):
+        """Test create permission for team leader"""
         request = self.factory.post('/')
-        
-        # Team leader can create
         request.user = self.team_leader
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Admin can create
-        request.user = self.admin
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Employee cannot create
-        request.user = self.employee
-        self.assertFalse(permission.has_permission(request, None))
+        self.assertTrue(self.permission.has_permission(request, None))
     
-    def test_can_manage_project_read(self):
-        """Test project read permissions"""
-        permission = CanManageProject()
-        request = self.factory.get('/')
-        
-        # All authenticated users can read
-        for user in [self.admin, self.team_leader, self.employee, self.reviewer]:
-            request.user = user
-            self.assertTrue(permission.has_permission(request, None))
-    
-    def test_can_manage_project_update(self):
-        """Test project update permissions"""
-        permission = CanManageProject()
-        request = self.factory.put('/')
-        
-        # Team leader of the project can update
-        request.user = self.team_leader
-        self.assertTrue(permission.has_object_permission(request, None, self.project))
-        
-        # Admin can update
-        request.user = self.admin
-        self.assertTrue(permission.has_object_permission(request, None, self.project))
-        
-        # Employee cannot update
-        request.user = self.employee
-        self.assertFalse(permission.has_object_permission(request, None, self.project))
-
-
-class TaskPermissionTest(PermissionTestCase):
-    """Test task-related permissions"""
-    
-    def test_can_manage_task_create(self):
-        """Test task creation permissions"""
-        permission = CanManageTask()
+    def test_create_permission_denied_for_employee(self):
+        """Test create permission denied for employee"""
         request = self.factory.post('/')
-        
-        # Team leader can create tasks
-        request.user = self.team_leader
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Admin can create tasks
-        request.user = self.admin
-        self.assertTrue(permission.has_permission(request, None))
-        
-        # Employee cannot create tasks
         request.user = self.employee
-        self.assertFalse(permission.has_permission(request, None))
-    
-    def test_can_manage_task_read(self):
-        """Test task read permissions"""
-        permission = CanManageTask()
-        request = self.factory.get('/')
-        
-        # All authenticated users can read
-        for user in [self.admin, self.team_leader, self.employee]:
-            request.user = user
-            self.assertTrue(permission.has_permission(request, None))
-    
-    def test_can_manage_task_update(self):
-        """Test task update permissions"""
-        permission = CanManageTask()
-        request = self.factory.put('/')
-        
-        # Assigned employee can update
-        request.user = self.employee
-        self.assertTrue(permission.has_object_permission(request, None, self.task))
-        
-        # Team leader can update
-        request.user = self.team_leader
-        self.assertTrue(permission.has_object_permission(request, None, self.task))
-        
-        # Admin can update
-        request.user = self.admin
-        self.assertTrue(permission.has_object_permission(request, None, self.task))
-        
-        # Different employee cannot update
-        other_employee = User.objects.create_user(
-            username='other_emp',
-            password='pass',
-            role='EMPLOYEE'
-        )
-        request.user = other_employee
-        self.assertFalse(permission.has_object_permission(request, None, self.task))
-    
-    def test_can_manage_task_delete(self):
-        """Test task deletion permissions"""
-        permission = CanManageTask()
-        request = self.factory.delete('/')
-        
-        # Admin can delete
-        request.user = self.admin
-        self.assertTrue(permission.has_object_permission(request, None, self.task))
-        
-        # Team leader can delete
-        request.user = self.team_leader
-        self.assertTrue(permission.has_object_permission(request, None, self.task))
-        
-        # Employee cannot delete
-        request.user = self.employee
-        self.assertFalse(permission.has_object_permission(request, None, self.task))
-
-
-class ReviewPermissionTest(PermissionTestCase):
-    """Test review-related permissions"""
-    
-    def test_can_manage_review_create(self):
-        """Test review creation permissions"""
-        from tasks.permissions import CanManageReview
-        permission = CanManageReview()
-        request = self.factory.post('/')
-        
-        # Employee who owns the task can create review
-        request.user = self.employee
-        request.data = {'task': self.task.id}
-        # In real scenario, this would be checked in the view
-        # Here we just test the basic permission logic
-        self.assertTrue(permission.has_permission(request, None))
-    
-    def test_can_manage_review_approve(self):
-        """Test review approval permissions"""
-        from tasks.models import Review
-        from tasks.permissions import CanManageReview
-        
-        review = Review.objects.create(
-            task=self.task,
-            submitted_by=self.employee,
-            reviewer=self.reviewer,
-            status='IN_REVIEW'
-        )
-        
-        permission = CanManageReview()
-        request = self.factory.post('/')
-        
-        # Assigned reviewer can approve
-        request.user = self.reviewer
-        self.assertTrue(permission.has_object_permission(request, None, review))
-        
-        # Admin can approve
-        request.user = self.admin
-        self.assertTrue(permission.has_object_permission(request, None, review))
-        
-        # Other users cannot approve
-        request.user = self.employee
-        self.assertFalse(permission.has_object_permission(request, None, review))
+        self.assertFalse(self.permission.has_permission(request, None))

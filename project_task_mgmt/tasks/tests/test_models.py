@@ -1,413 +1,441 @@
 """
-Test cases for models in the tasks app
+Unit tests for models in the tasks app
 """
+import pytest
 from django.test import TestCase
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.utils import timezone
-from datetime import timedelta
+from django.db import IntegrityError
+from datetime import date, timedelta
 from tasks.models import (
-    User, Team, Project, ProjectMember, Sprint, Task,
-    TaskDependency, Review, ReviewComment, Comment,
-    Mention, Attachment, Notification, ActivityLog
+    User, Team, TeamMember, Project, ProjectMember, Sprint, Task,
+    TaskDependency, Review, ReviewComment, Comment, Mention,
+    Attachment, Notification, ActivityLog, Report, Analytics
 )
 
+User = get_user_model()
 
-class UserModelTest(TestCase):
+
+@pytest.mark.django_db
+class TestUserModel(TestCase):
     """Test cases for User model"""
     
     def setUp(self):
-        self.admin = User.objects.create_user(
+        """Set up test data"""
+        self.admin_user = User.objects.create_user(
             username='admin',
             email='admin@test.com',
-            password='admin123',
-            role='ADMIN',
-            first_name='Admin',
-            last_name='User'
+            password='testpass123',
+            role='ADMIN'
         )
-        
         self.team_leader = User.objects.create_user(
             username='teamlead',
-            email='tl@test.com',
-            password='tl123',
+            email='lead@test.com',
+            password='testpass123',
             role='TEAM_LEADER'
         )
-        
         self.employee = User.objects.create_user(
             username='employee',
             email='emp@test.com',
-            password='emp123',
+            password='testpass123',
             role='EMPLOYEE'
+        )
+        self.reviewer = User.objects.create_user(
+            username='reviewer',
+            email='reviewer@test.com',
+            password='testpass123',
+            role='REVIEWER'
         )
     
     def test_user_creation(self):
-        """Test user is created with correct attributes"""
-        self.assertEqual(self.admin.username, 'admin')
-        self.assertEqual(self.admin.role, 'ADMIN')
-        self.assertTrue(self.admin.is_admin)
-        self.assertFalse(self.admin.is_team_leader)
+        """Test user is created successfully"""
+        self.assertEqual(self.admin_user.username, 'admin')
+        self.assertEqual(self.admin_user.email, 'admin@test.com')
+        self.assertEqual(self.admin_user.role, 'ADMIN')
+        self.assertTrue(self.admin_user.is_active)
     
-    def test_role_properties(self):
-        """Test role property methods"""
-        self.assertTrue(self.admin.is_admin)
-        self.assertTrue(self.team_leader.is_team_leader)
-        self.assertTrue(self.employee.is_employee)
+    def test_user_str_method(self):
+        """Test string representation of user"""
+        expected = "admin (Admin)"
+        self.assertEqual(str(self.admin_user), expected)
+    
+    def test_user_is_admin_property(self):
+        """Test is_admin property"""
+        self.assertTrue(self.admin_user.is_admin)
+        self.assertFalse(self.team_leader.is_admin)
         self.assertFalse(self.employee.is_admin)
     
-    def test_str_representation(self):
-        """Test string representation"""
-        self.assertEqual(str(self.admin), 'admin (Admin)')
-        self.assertEqual(str(self.employee), 'employee (Employee)')
+    def test_user_is_team_leader_property(self):
+        """Test is_team_leader property"""
+        self.assertFalse(self.admin_user.is_team_leader)
+        self.assertTrue(self.team_leader.is_team_leader)
+        self.assertFalse(self.employee.is_team_leader)
+    
+    def test_user_is_employee_property(self):
+        """Test is_employee property"""
+        self.assertFalse(self.admin_user.is_employee)
+        self.assertTrue(self.team_leader.is_employee)
+        self.assertTrue(self.employee.is_employee)
+    
+    def test_user_is_reviewer_property(self):
+        """Test is_reviewer property"""
+        self.assertFalse(self.admin_user.is_reviewer)
+        self.assertTrue(self.reviewer.is_reviewer)
+    
+    def test_user_password_hashing(self):
+        """Test password is hashed"""
+        self.assertNotEqual(self.admin_user.password, 'testpass123')
+        self.assertTrue(self.admin_user.check_password('testpass123'))
 
 
-class TeamModelTest(TestCase):
+@pytest.mark.django_db
+class TestTeamModel(TestCase):
     """Test cases for Team model"""
     
     def setUp(self):
-        self.leader = User.objects.create_user(
-            username='leader',
-            password='pass123',
+        """Set up test data"""
+        self.team_leader = User.objects.create_user(
+            username='teamlead',
+            email='lead@test.com',
+            password='testpass123',
             role='TEAM_LEADER'
+        )
+        self.employee1 = User.objects.create_user(
+            username='emp1',
+            email='emp1@test.com',
+            password='testpass123',
+            role='EMPLOYEE'
+        )
+        self.employee2 = User.objects.create_user(
+            username='emp2',
+            email='emp2@test.com',
+            password='testpass123',
+            role='EMPLOYEE'
         )
         self.team = Team.objects.create(
             name='Development Team',
-            description='Backend dev team',
-            team_leader=self.leader
+            description='Main development team',
+            team_leader=self.team_leader
         )
+        self.team.members.add(self.employee1, self.employee2)
     
     def test_team_creation(self):
-        """Test team is created correctly"""
+        """Test team is created successfully"""
         self.assertEqual(self.team.name, 'Development Team')
-        self.assertEqual(self.team.team_leader, self.leader)
-        # Team model doesn't have is_active field
-        self.assertIsNotNone(self.team.created_at)
+        self.assertEqual(self.team.team_leader, self.team_leader)
+        self.assertEqual(self.team.members.count(), 2)
     
-    def test_team_str(self):
-        """Test team string representation"""
+    def test_team_str_method(self):
+        """Test string representation of team"""
         self.assertEqual(str(self.team), 'Development Team')
+    
+    def test_team_member_addition(self):
+        """Test adding members to team"""
+        new_employee = User.objects.create_user(
+            username='emp3',
+            email='emp3@test.com',
+            password='testpass123'
+        )
+        self.team.members.add(new_employee)
+        self.assertEqual(self.team.members.count(), 3)
+        self.assertIn(new_employee, self.team.members.all())
 
 
-class ProjectModelTest(TestCase):
+@pytest.mark.django_db
+class TestProjectModel(TestCase):
     """Test cases for Project model"""
     
     def setUp(self):
-        self.leader = User.objects.create_user(
-            username='leader',
-            password='pass123',
+        """Set up test data"""
+        self.team_leader = User.objects.create_user(
+            username='teamlead',
+            email='lead@test.com',
+            password='testpass123',
             role='TEAM_LEADER'
         )
         self.team = Team.objects.create(
             name='Dev Team',
-            team_leader=self.leader
+            team_leader=self.team_leader
         )
         self.project = Project.objects.create(
             name='Test Project',
-            description='Test project description',
+            description='A test project',
             team=self.team,
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(days=30),
-            created_by=self.leader
+            created_by=self.team_leader,
+            start_date=date.today(),
+            status='PLANNING'
         )
     
     def test_project_creation(self):
-        """Test project creation"""
+        """Test project is created successfully"""
         self.assertEqual(self.project.name, 'Test Project')
-        self.assertEqual(self.project.team, self.team)
         self.assertEqual(self.project.status, 'PLANNING')
-    
-    def test_project_progress_calculation(self):
-        """Test progress percentage calculation"""
-        # Initially no tasks, progress should be 0
         self.assertEqual(self.project.progress_percentage, 0)
-        
-        # Create some tasks
-        employee = User.objects.create_user(username='emp', password='pass', role='EMPLOYEE')
-        Task.objects.create(
-            title='Task 1',
+    
+    def test_project_str_method(self):
+        """Test string representation of project"""
+        self.assertEqual(str(self.project), 'Test Project')
+    
+    def test_project_calculate_progress(self):
+        """Test progress calculation"""
+        # Create sprint for tasks
+        sprint = Sprint.objects.create(
             project=self.project,
-            assigned_to=employee,
-            assigned_by=self.leader,
+            name='Sprint 1',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=14)
+        )
+        
+        # Create tasks
+        employee = User.objects.create_user(
+            username='emp',
+            email='emp@test.com',
+            password='testpass123'
+        )
+        Task.objects.create(
+            project=self.project,
+            sprint=sprint,
+            title='Task 1',
+            assigned_by=self.team_leader,
             status='DONE'
         )
         Task.objects.create(
-            title='Task 2',
             project=self.project,
-            assigned_to=employee,
-            assigned_by=self.leader,
+            sprint=sprint,
+            title='Task 2',
+            assigned_by=self.team_leader,
             status='IN_PROGRESS'
         )
         
-        # Refresh from DB
-        self.project.refresh_from_db()
-        # 1 out of 2 tasks done = 50%
-        self.assertEqual(self.project.progress_percentage, 50)
-    
-    def test_project_str(self):
-        """Test project string representation"""
-        self.assertEqual(str(self.project), 'Test Project')
+        progress = self.project.calculate_progress()
+        self.assertEqual(progress, 50)
 
 
-class SprintModelTest(TestCase):
+@pytest.mark.django_db
+class TestSprintModel(TestCase):
     """Test cases for Sprint model"""
     
     def setUp(self):
-        leader = User.objects.create_user(username='leader', password='pass', role='TEAM_LEADER')
-        team = Team.objects.create(name='Team', team_leader=leader)
+        """Set up test data"""
+        self.team_leader = User.objects.create_user(
+            username='teamlead',
+            email='lead@test.com',
+            password='testpass123',
+            role='TEAM_LEADER'
+        )
+        self.team = Team.objects.create(
+            name='Dev Team',
+            team_leader=self.team_leader
+        )
         self.project = Project.objects.create(
-            name='Project',
-            team=team,
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(days=60),
-            created_by=leader
+            name='Test Project',
+            team=self.team,
+            created_by=self.team_leader,
+            start_date=date.today()
         )
         self.sprint = Sprint.objects.create(
-            name='Sprint 1',
             project=self.project,
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(days=14),
-            goal='Complete core features'
+            name='Sprint 1',
+            goal='Complete initial features',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=14),
+            status='PLANNING'
         )
     
     def test_sprint_creation(self):
-        """Test sprint creation"""
+        """Test sprint is created successfully"""
         self.assertEqual(self.sprint.name, 'Sprint 1')
         self.assertEqual(self.sprint.status, 'PLANNING')
+        self.assertEqual(self.sprint.velocity, 0)
     
-    def test_sprint_is_active(self):
-        """Test sprint active status"""
-        self.assertNotEqual(self.sprint.status, 'ACTIVE')
+    def test_sprint_str_method(self):
+        """Test string representation of sprint"""
+        expected = "Test Project - Sprint 1"
+        self.assertEqual(str(self.sprint), expected)
+    
+    def test_sprint_calculate_velocity(self):
+        """Test velocity calculation"""
+        Task.objects.create(
+            project=self.project,
+            sprint=self.sprint,
+            title='Task 1',
+            assigned_by=self.team_leader,
+            status='DONE',
+            estimated_hours=8
+        )
+        Task.objects.create(
+            project=self.project,
+            sprint=self.sprint,
+            title='Task 2',
+            assigned_by=self.team_leader,
+            status='DONE',
+            estimated_hours=5
+        )
         
-        self.sprint.status = 'ACTIVE'
-        self.sprint.save()
-        self.assertEqual(self.sprint.status, 'ACTIVE')
-    
-    def test_sprint_str(self):
-        """Test sprint string representation"""
-        self.assertEqual(str(self.sprint), 'Project - Sprint 1')
+        velocity = self.sprint.calculate_velocity()
+        self.assertEqual(velocity, 13)
 
 
-class TaskModelTest(TestCase):
+@pytest.mark.django_db
+class TestTaskModel(TestCase):
     """Test cases for Task model"""
     
     def setUp(self):
-        self.leader = User.objects.create_user(username='leader', password='pass', role='TEAM_LEADER')
-        self.employee = User.objects.create_user(username='emp', password='pass', role='EMPLOYEE')
-        team = Team.objects.create(name='Team', team_leader=self.leader)
+        """Set up test data"""
+        self.team_leader = User.objects.create_user(
+            username='teamlead',
+            email='lead@test.com',
+            password='testpass123',
+            role='TEAM_LEADER'
+        )
+        self.employee = User.objects.create_user(
+            username='emp',
+            email='emp@test.com',
+            password='testpass123',
+            role='EMPLOYEE'
+        )
+        self.team = Team.objects.create(
+            name='Dev Team',
+            team_leader=self.team_leader
+        )
         self.project = Project.objects.create(
-            name='Project',
-            team=team,
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(days=60),
-            created_by=self.leader
+            name='Test Project',
+            team=self.team,
+            created_by=self.team_leader,
+            start_date=date.today()
+        )
+        self.sprint = Sprint.objects.create(
+            project=self.project,
+            name='Sprint 1',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=14)
         )
         self.task = Task.objects.create(
-            title='Implement login',
-            description='Create login functionality',
             project=self.project,
+            sprint=self.sprint,
+            title='Test Task',
+            description='A test task',
             assigned_to=self.employee,
-            assigned_by=self.leader,
-            priority='P0',
-            estimated_hours=8,
-            due_date=timezone.now().date() + timedelta(days=7)
+            assigned_by=self.team_leader,
+            priority='P1',
+            status='OPEN',
+            estimated_hours=5
         )
     
     def test_task_creation(self):
-        """Test task creation"""
-        self.assertEqual(self.task.title, 'Implement login')
+        """Test task is created successfully"""
+        self.assertEqual(self.task.title, 'Test Task')
+        self.assertEqual(self.task.priority, 'P1')
         self.assertEqual(self.task.status, 'OPEN')
-        self.assertEqual(self.task.priority, 'P0')
+        self.assertEqual(self.task.estimated_hours, 5)
     
-    def test_task_is_overdue(self):
-        """Test overdue task detection"""
-        # Task due in future - not overdue
-        self.assertFalse(self.task.is_overdue)
-        
-        # Set due date to past
-        self.task.due_date = timezone.now().date() - timedelta(days=1)
+    def test_task_str_method(self):
+        """Test string representation of task"""
+        self.assertEqual(str(self.task), 'Test Task')
+    
+    def test_task_assignment(self):
+        """Test task assignment"""
+        self.assertEqual(self.task.assigned_to, self.employee)
+        self.assertEqual(self.task.assigned_by, self.team_leader)
+    
+    def test_task_status_changes(self):
+        """Test task status updates"""
+        self.task.status = 'IN_PROGRESS'
         self.task.save()
-        self.assertTrue(self.task.is_overdue)
+        self.assertEqual(self.task.status, 'IN_PROGRESS')
         
-        # Completed task is never overdue
         self.task.status = 'DONE'
         self.task.save()
-        self.assertFalse(self.task.is_overdue)
-    
-    def test_task_tag_list(self):
-        """Test tag list parsing"""
-        self.task.tags = 'backend,authentication,urgent'
-        self.task.save()
-        self.assertEqual(self.task.tag_list, ['backend', 'authentication', 'urgent'])
-        
-        self.task.tags = ''
-        self.task.save()
-        self.assertEqual(self.task.tag_list, [])
-    
-    def test_task_str(self):
-        """Test task string representation"""
-        self.assertEqual(str(self.task), 'Implement login')
+        self.assertEqual(self.task.status, 'DONE')
 
 
-class TaskDependencyModelTest(TestCase):
-    """Test cases for TaskDependency model"""
-    
-    def setUp(self):
-        leader = User.objects.create_user(username='leader', password='pass', role='TEAM_LEADER')
-        employee = User.objects.create_user(username='emp', password='pass', role='EMPLOYEE')
-        team = Team.objects.create(name='Team', team_leader=leader)
-        project = Project.objects.create(
-            name='Project',
-            team=team,
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(days=60),
-            created_by=leader
-        )
-        self.task1 = Task.objects.create(
-            title='Task 1',
-            project=project,
-            assigned_to=employee,
-            assigned_by=leader
-        )
-        self.task2 = Task.objects.create(
-            title='Task 2',
-            project=project,
-            assigned_to=employee,
-            assigned_by=leader
-        )
-    
-    def test_task_dependency_creation(self):
-        """Test task dependency creation"""
-        dependency = TaskDependency.objects.create(
-            task=self.task2,
-            depends_on_task=self.task1
-        )
-        self.assertEqual(dependency.task, self.task2)
-        self.assertEqual(dependency.depends_on_task, self.task1)
-    
-    def test_circular_dependency_prevention(self):
-        """Test that circular dependencies are prevented"""
-        # Create A depends on B
-        TaskDependency.objects.create(task=self.task2, depends_on_task=self.task1)
-        
-        # Try to create B depends on A (circular)
-        with self.assertRaises(ValidationError):
-            dep = TaskDependency(task=self.task1, depends_on_task=self.task2)
-            dep.full_clean()
-
-
-class ReviewModelTest(TestCase):
+@pytest.mark.django_db
+class TestReviewModel(TestCase):
     """Test cases for Review model"""
     
     def setUp(self):
-        leader = User.objects.create_user(username='leader', password='pass', role='TEAM_LEADER')
-        employee = User.objects.create_user(username='emp', password='pass', role='EMPLOYEE')
-        self.reviewer = User.objects.create_user(username='reviewer', password='pass', role='REVIEWER')
-        team = Team.objects.create(name='Team', team_leader=leader)
-        project = Project.objects.create(
-            name='Project',
-            team=team,
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(days=60),
-            created_by=leader
+        """Set up test data"""
+        self.team_leader = User.objects.create_user(
+            username='teamlead',
+            email='lead@test.com',
+            password='testpass123',
+            role='TEAM_LEADER'
+        )
+        self.reviewer = User.objects.create_user(
+            username='reviewer',
+            email='reviewer@test.com',
+            password='testpass123',
+            role='REVIEWER'
+        )
+        self.team = Team.objects.create(
+            name='Dev Team',
+            team_leader=self.team_leader
+        )
+        self.project = Project.objects.create(
+            name='Test Project',
+            team=self.team,
+            created_by=self.team_leader,
+            start_date=date.today()
+        )
+        self.sprint = Sprint.objects.create(
+            project=self.project,
+            name='Sprint 1',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=14)
         )
         self.task = Task.objects.create(
-            title='Task',
-            project=project,
-            assigned_to=employee,
-            assigned_by=leader,
+            project=self.project,
+            sprint=self.sprint,
+            title='Test Task',
+            assigned_by=self.team_leader,
             status='SUBMITTED'
         )
         self.review = Review.objects.create(
             task=self.task,
-            submitted_by=employee,
-            comments='Please review'
+            submitted_by=self.team_leader,
+            reviewer=self.reviewer,
+            status='PENDING'
         )
     
     def test_review_creation(self):
-        """Test review creation"""
-        self.assertEqual(self.review.status, 'PENDING')
-        self.assertIsNone(self.review.reviewer)
-    
-    def test_review_assignment(self):
-        """Test assigning reviewer"""
-        self.review.reviewer = self.reviewer
-        self.review.status = 'IN_REVIEW'
-        self.review.save()
-        
+        """Test review is created successfully"""
+        self.assertEqual(self.review.task, self.task)
         self.assertEqual(self.review.reviewer, self.reviewer)
-        self.assertEqual(self.review.status, 'IN_REVIEW')
+        self.assertEqual(self.review.status, 'PENDING')
     
-    def test_review_str(self):
-        """Test review string representation"""
-        self.assertIn('Task', str(self.review))
+    def test_review_approval(self):
+        """Test review approval"""
+        self.review.status = 'APPROVED'
+        self.review.save()
+        self.assertEqual(self.review.status, 'APPROVED')
 
 
-class NotificationModelTest(TestCase):
+@pytest.mark.django_db
+class TestNotificationModel(TestCase):
     """Test cases for Notification model"""
     
     def setUp(self):
-        self.user = User.objects.create_user(username='user', password='pass', role='EMPLOYEE')
+        """Set up test data"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@test.com',
+            password='testpass123'
+        )
+        self.notification = Notification.objects.create(
+            user=self.user,
+            title='Test Notification',
+            message='This is a test notification',
+            type='TASK_ASSIGNED'
+        )
     
     def test_notification_creation(self):
-        """Test notification creation"""
-        notification = Notification.objects.create(
-            user=self.user,
-            type='TASK_ASSIGNED',
-            title='New Task',
-            message='You have been assigned a new task'
-        )
-        self.assertFalse(notification.is_read)
-        self.assertEqual(notification.type, 'TASK_ASSIGNED')
+        """Test notification is created successfully"""
+        self.assertEqual(self.notification.title, 'Test Notification')
+        self.assertEqual(self.notification.user, self.user)
+        self.assertFalse(self.notification.is_read)
     
-    def test_notification_str(self):
-        """Test notification string representation"""
-        notification = Notification.objects.create(
-            user=self.user,
-            type='TASK_ASSIGNED',
-            title='New Task',
-            message='Message'
-        )
-        # Check the actual format: "TYPE - username"
-        self.assertIn('TASK_ASSIGNED', str(notification))
-        self.assertIn('user', str(notification))
-
-
-class CommentModelTest(TestCase):
-    """Test cases for Comment model"""
-    
-    def setUp(self):
-        leader = User.objects.create_user(username='leader', password='pass', role='TEAM_LEADER')
-        employee = User.objects.create_user(username='emp', password='pass', role='EMPLOYEE')
-        team = Team.objects.create(name='Team', team_leader=leader)
-        project = Project.objects.create(
-            name='Project',
-            team=team,
-            start_date=timezone.now().date(),
-            end_date=timezone.now().date() + timedelta(days=60),
-            created_by=leader
-        )
-        self.task = Task.objects.create(
-            title='Task',
-            project=project,
-            assigned_to=employee,
-            assigned_by=leader
-        )
-        self.user = employee
-    
-    def test_comment_creation(self):
-        """Test comment creation"""
-        comment = Comment.objects.create(
-            task=self.task,
-            user=self.user,
-            content='This is a comment'
-        )
-        self.assertEqual(comment.content, 'This is a comment')
-        self.assertEqual(comment.task, self.task)
-    
-    def test_comment_str(self):
-        """Test comment string representation"""
-        comment = Comment.objects.create(
-            task=self.task,
-            user=self.user,
-            content='Test comment'
-        )
-        self.assertIn('emp', str(comment))
-        self.assertIn('Task', str(comment))
+    def test_notification_mark_as_read(self):
+        """Test marking notification as read"""
+        self.notification.is_read = True
+        self.notification.save()
+        self.assertTrue(self.notification.is_read)

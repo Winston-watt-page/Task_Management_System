@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  test-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  test:
+    build: .
+    command: pytest tasks/tests/ -v --tb=short
+    volumes:
+      - ./project_task_mgmt:/app
+    environment:
+      - DATABASE_URL=postgresql://test_user:test_password@test-db:5432/test_db
+      - DJANGO_SETTINGS_MODULE=project_task_mgmt.settings
+    depends_on:
+      - test-db
