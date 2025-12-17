@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Backlog{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="bi bi-list-task"></i> Admin Backlog</h2>
+    
+    <div class="mb-3">
+        <a href="{% url 'issue_create' %}" class="btn btn-primary btn-primary-custom">
+            <i class="bi bi-plus-circle"></i> Create New Issue
+        </a>
+    </div>
+    
+    <div class="card card-custom">
+        <div class="card-body">
+            <h5 class="card-title">Unassigned Issues (No Sprint)</h5>
+            
+            {% if issues %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Assignee</th>
+                                <th>Project</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for issue in issues %}
+                            <tr>
+                                <td><strong>{{ issue.project.key }}-{{ issue.id }}</strong></td>
+                                <td>{{ issue.title }}</td>
+                                <td><span class="badge bg-secondary">{{ issue.get_issue_type_display }}</span></td>
+                                <td><span class="badge badge-priority-{{ issue.priority }}">{{ issue.get_priority_display }}</span></td>
+                                <td><span class="badge badge-status-{{ issue.status }}">{{ issue.get_status_display }}</span></td>
+                                <td>{{ issue.assignee.username|default:"Unassigned" }}</td>
+                                <td>{{ issue.project.name }}</td>
+                                <td>
+                                    <a href="{% url 'issue_detail' issue.id %}" class="btn btn-sm btn-primary">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No unassigned issues in backlog. All issues are assigned to sprints.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

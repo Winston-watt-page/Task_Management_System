@@ -1,0 +1,241 @@
+TASK MANAGEMENT SYSTEM - PROJECT REQUIREMENTS
+===============================================
+
+OVERVIEW:
+---------
+A task management tool similar to JIRA with role-based permissions and sprint management.
+
+USER ROLES & GROUPS:
+-------------------
+1. Admin
+   - Registers with username and password
+   - Creates and manages groups
+   - Adds users to the system
+   - Defines and assigns permissions to each group
+   - Has access to backlog page containing main tasks/projects
+
+2. TL (Team Lead)
+   - Assigned when creating sprints
+   - Communicates with team members to gather due dates
+   - Has permission to start the sprint
+
+3. Scrum Master
+   - Works with Admin to plan sprints
+   - Assigns modules/tasks to developers
+   - Performs daily status updates
+   - Tracks who is making progress and what has been completed
+
+4. Developer
+   - Works on assigned tasks
+   - Sets their own due dates for assigned tasks
+   - Updates task status (To Do, Progress, Completed)
+   - Views assigned tasks on their dashboard
+
+5. Tester
+   - Tests completed tasks
+   - Updates task status
+   - Can change task states based on testing results
+
+TASK WORKFLOW STATES:
+--------------------
+- To Do
+- Progress (In Progress)
+- Completed
+
+COMPLETE WORKFLOW:
+-----------------
+
+1. ADMIN SETUP:
+   - Admin registers and logs into the system
+   - Admin creates groups (Admin, TL, Scrum Master, Developer, Tester)
+   - Admin adds users to the system and assigns them to groups
+   - Admin defines permissions for each group
+
+2. PROJECT/TASK CREATION:
+   - Main tasks/projects appear in Admin's backlog page
+   - Example: "Task Management System" as main project
+
+3. SPRINT PLANNING:
+   - Admin and Scrum Master discuss manually
+   - Break down main task into different modules
+   - Each module is considered as a different sprint
+   - Assign modules/sprints to different developers
+   - TL (Team Lead) is assigned/defined at the time of sprint creation
+
+4. TASK ASSIGNMENT:
+   - Tasks become visible on assigned person's page/dashboard
+   - Assigned person (developer) provides the due date
+   - Each team member can see their backlog on their dashboard
+
+5. SPRINT EXECUTION:
+   - TL starts the sprint
+   - Assignees can change task status:
+     * To Do → Progress → Completed
+   - Team members work on their assigned tasks
+
+6. DAILY UPDATES:
+   - Scrum Master updates daily status
+   - Tracks who is making progress
+   - Monitors what has been completed
+   - If deadlines change and progress is not made, Scrum Master tracks and reports
+
+KEY FEATURES:
+------------
+- Role-based permissions system
+- Sprint management with TL assignment
+- Backlog pages for Admin and individual users
+- Task assignment and tracking
+- Status updates (To Do, Progress, Completed)
+- Due date management by assignees
+- Daily progress tracking by Scrum Master
+- Manual sprint planning between Admin and Scrum Master
+
+ENHANCED JIRA-LIKE FEATURES:
+===========================
+
+ISSUE/TASK MANAGEMENT:
+---------------------
+- Issue Types:
+  * Story: User stories for features
+  * Task: General work items
+  * Bug: Issues to fix
+  * Epic: Large features broken into smaller stories
+  * Subtask: Break tasks into smaller pieces
+
+- Priority Levels:
+  * Critical
+  * High
+  * Medium
+  * Low
+
+- Story Points: For estimation and sprint planning
+- Labels/Tags: For categorization and filtering
+- Task Description: Rich text editor with formatting
+- Acceptance Criteria: Define done conditions
+
+SPRINT FEATURES:
+---------------
+- Sprint Velocity: Track team's average completion rate
+- Burndown Chart: Visual progress tracking showing remaining work
+- Sprint Retrospective: Post-sprint reviews and improvements
+- Sprint Board: Kanban/Scrum board view with drag-and-drop
+- Sprint Capacity: Plan based on team availability
+- Sprint Goals: Define objectives for each sprint
+
+COLLABORATION FEATURES:
+----------------------
+- Comments: Team discussions on tasks with threading
+- Activity Log: Track all changes and updates with timestamp
+- @Mentions: Notify specific users in comments
+- Watchers: Users who monitor task progress without being assigned
+- File Attachments: Add documents, images, screenshots, logs
+- Task Linking: Link related tasks (blocks, is blocked by, relates to)
+
+TRACKING & REPORTING:
+--------------------
+- Time Logging:
+  * Estimated time vs actual time spent
+  * Time tracking per task
+  * Detailed work logs with descriptions
+
+- Status History: Track all status changes over time
+- Reports:
+  * Velocity charts
+  * Cumulative flow diagram
+  * Workload distribution per user
+  * Sprint reports
+  * Burndown/Burnup charts
+
+- Custom Dashboards:
+  * Personalized views for each role
+  * Widgets for assigned tasks, recent activity
+  * Sprint progress indicators
+
+ADVANCED FEATURES:
+-----------------
+- Epic Management:
+  * Group related stories/tasks under epics
+  * Epic progress tracking
+  * Epic roadmap view
+
+- Release/Version Management:
+  * Track multiple releases
+  * Version roadmap
+  * Release notes generation
+
+- Search & Filters:
+  * Advanced query builder
+  * Save custom filters
+  * Quick filters for common views
+  * JQL (JIRA Query Language) like search
+
+- Custom Fields:
+  * Add organization-specific data
+  * Custom field types (text, dropdown, date, etc.)
+
+- Email Notifications:
+  * Alerts for task assignments
+  * Status change notifications
+  * Due date reminders
+  * @Mention notifications
+  * Customizable notification preferences
+
+- Workflow Customization:
+  * Define custom status flows
+  * Workflow transitions
+  * Status restrictions based on roles
+
+ACCESS CONTROL & PERMISSIONS:
+----------------------------
+- Project-level Permissions:
+  * Fine-grained access control
+  * Role-based restrictions
+  * View/Edit/Delete permissions
+
+- Activity Restrictions:
+  * Control who can edit tasks
+  * Control who can delete tasks
+  * Control who can comment
+  * Control who can change status
+
+- Board Permissions:
+  * Control visibility of boards
+  * Restrict sprint management
+  * Control backlog access
+
+USER INTERFACE FEATURES:
+-----------------------
+- Dashboard:
+  * Personalized for each role
+  * Quick access to assigned tasks
+  * Recent activity feed
+  * Sprint calendar
+
+- Boards:
+  * Scrum board (sprint-based)
+  * Kanban board (continuous flow)
+  * Drag-and-drop functionality
+  * Swimlanes (by assignee, priority, etc.)
+
+- Backlog:
+  * Prioritized list view
+  * Drag to reorder
+  * Bulk operations
+  * Sprint planning view
+
+- Timeline/Roadmap:
+  * Visual project timeline
+  * Epic and release planning
+  * Dependency visualization
+
+ADDITIONAL ENHANCEMENTS:
+-----------------------
+- Audit Trail: Complete history of all changes
+- Export Features: Export tasks, reports to CSV/PDF
+- API: REST API for integrations
+- Integrations: Email, Slack, Git (future scope)
+- Mobile Responsive: Work on any device
+- Dark Mode: Theme options for users
+- Keyboard Shortcuts: Power user features
+- Bulk Edit: Update multiple tasks at once
+- Templates: Task and project templates for reuse

@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Sprints - JIRA Clone{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-lightning"></i> Sprints</h2>
+        <a href="{% url 'sprint_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create Sprint
+        </a>
+    </div>
+
+    <!-- Active Sprints -->
+    <h4 class="mb-3">Active Sprints</h4>
+    <div class="row mb-4">
+        {% for sprint in sprints %}
+        {% if sprint.status == 'active' %}
+        <div class="col-md-6 mb-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title">{{ sprint.name }}</h5>
+                            <p class="text-muted mb-2">{{ sprint.project.name }}</p>
+                        </div>
+                        <span class="badge bg-primary">ACTIVE</span>
+                    </div>
+                    <p class="card-text">{{ sprint.goal|truncatewords:15 }}</p>
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ sprint.start_date|date:"M d" }} - {{ sprint.end_date|date:"M d, Y" }}
+                        </small>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> TL: {% if sprint.team_lead %}{{ sprint.team_lead.get_full_name|default:sprint.team_lead.username }}{% else %}Unassigned{% endif %}
+                        </small>
+                    </div>
+                    <a href="{% url 'sprint_detail' sprint.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> View Sprint
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Planning Sprints -->
+    <h4 class="mb-3">Planning Sprints</h4>
+    <div class="row mb-4">
+        {% for sprint in sprints %}
+        {% if sprint.status == 'planning' %}
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title">{{ sprint.name }}</h5>
+                            <p class="text-muted mb-2">{{ sprint.project.name }}</p>
+                        </div>
+                        <span class="badge bg-secondary">PLANNING</span>
+                    </div>
+                    <p class="card-text">{{ sprint.goal|truncatewords:15 }}</p>
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> TL: 
+                            {% if sprint.team_lead %}
+                            {{ sprint.team_lead.get_full_name|default:sprint.team_lead.username }}
+                            {% else %}
+                            Unassigned
+                            {% endif %}
+                        </small>
+                    </div>
+                    <a href="{% url 'sprint_detail' sprint.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> View Sprint
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Completed Sprints -->
+    <h4 class="mb-3">Completed Sprints</h4>
+    <div class="row">
+        {% for sprint in sprints %}
+        {% if sprint.status == 'completed' %}
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title">{{ sprint.name }}</h5>
+                            <p class="text-muted mb-2">{{ sprint.project.name }}</p>
+                        </div>
+                        <span class="badge bg-success">COMPLETED</span>
+                    </div>
+                    <p class="card-text">{{ sprint.goal|truncatewords:15 }}</p>
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar-check"></i> Completed: {{ sprint.updated_at|date:"M d, Y" }}
+                        </small>
+                    </div>
+                    <a href="{% url 'sprint_detail' sprint.id %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-eye"></i> View Sprint
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if not sprints %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No sprints found. Create your first sprint to get started!
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

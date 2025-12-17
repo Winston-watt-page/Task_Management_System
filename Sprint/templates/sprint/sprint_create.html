@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Sprint - JIRA Clone{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-lightning"></i> Create New Sprint</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="project" class="form-label">Project <span class="text-danger">*</span></label>
+                            <select class="form-control" id="project" name="project" required>
+                                <option value="">Select Project</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.key }} - {{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Sprint Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   placeholder="e.g., Sprint 1, Q1 2025 Sprint">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="goal" class="form-label">Sprint Goal</label>
+                            <textarea class="form-control" id="goal" name="goal" rows="3" 
+                                      placeholder="What do you want to achieve in this sprint?"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="team_lead" class="form-label">Team Lead <span class="text-danger">*</span></label>
+                            <select class="form-control" id="team_lead" name="team_lead" required>
+                                <option value="">Select Team Lead</option>
+                                {% for user in team_leads %}
+                                <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assignee"   class="form-label">Assignee (Developer)</label>
+                            <select class="form-control" id="assignee" name="assignee">
+                                <option value="">Select Assignee by Username</option>
+                                {% for user in developers %}
+                                <option value="{{ user.id }}">{{ user.username }} - {{ user.get_full_name|default:user.email }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Select the developer assigned to work on this sprint by their username</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date">
+                                <small class="text-muted">Optional: Leave blank to set when sprint starts</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date">
+                                <small class="text-muted">Optional: Can be set by TL when starting sprint</small>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Note:</strong> After creating the sprint, you can add issues/tasks and assign them to team members. Assignees will be able to set their own due dates for assigned tasks.
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'sprint_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Create Sprint
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

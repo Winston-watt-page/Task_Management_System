@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ sprint.name }} - JIRA Clone{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>{{ sprint.name }}</h2>
+            <p class="text-muted mb-0">
+                {{ sprint.project.name }} | 
+                <i class="bi bi-person"></i> 
+                {% if sprint.team_lead %}
+                {{ sprint.team_lead.get_full_name|default:sprint.team_lead.username }}
+                {% else %}
+                Unassigned
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <span class="badge {% if sprint.status == 'active' %}bg-primary{% elif sprint.status == 'completed' %}bg-success{% else %}bg-secondary{% endif %} me-2">
+                {{ sprint.status|upper }}
+            </span>
+            <a href="{% url 'issue_create' %}?sprint={{ sprint.id }}" class="btn btn-primary me-2">
+                <i class="bi bi-plus-circle"></i> Add Issue
+            </a>
+            {% if sprint.status == 'planning' %}
+            <a href="{% url 'sprint_start' sprint.id %}" class="btn btn-success">
+                <i class="bi bi-play-fill"></i> Start Sprint
+            </a>
+            {% elif sprint.status == 'active' %}
+            <a href="{% url 'sprint_complete' sprint.id %}" class="btn btn-warning">
+                <i class="bi bi-check-circle"></i> Complete Sprint
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sprint Info -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Sprint Goal</h5>
+            <p class="card-text">{{ sprint.goal }}</p>
+            <div class="row mb-3">
+                {% if sprint.start_date %}
+                <div class="col-md-4">
+                    <strong>Start Date:</strong> {{ sprint.start_date|date:"M d, Y" }}
+                </div>
+                {% endif %}
+                {% if sprint.end_date %}
+                <div class="col-md-4">
+                    <strong>End Date:</strong> {{ sprint.end_date|date:"M d, Y" }}
+                </div>
+                {% endif %}
+                <div class="col-md-4">
+                    <strong>Velocity:</strong> {{ sprint.velocity }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <strong>Assignee:</strong>
+                    {% if sprint.assignee %}
+                    <span class="badge bg-info">
+                        <i class="bi bi-person"></i> {{ sprint.assignee.get_full_name|default:sprint.assignee.username }}
+                    </span>
+                    {% else %}
+                    <span class="text-muted">No assignee</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sprint Board -->
+    <div class="row">
+        <!-- To Do -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">To Do ({{ todo_issues.count }})</h6>
+                </div>
+                <div class="card-body" style="min-height: 400px;">
+                    {% for issue in todo_issues %}
+                    <div class="card mb-2">
+                        <div class="card-body p-2">
+                            <a href="{% url 'issue_detail' issue.id %}" class="text-decoration-none">
+                                <small class="text-muted">{{ issue.project.key }}-{{ issue.id }}</small>
+                                <h6 class="mb-1">{{ issue.title|truncatewords:5 }}</h6>
+                            </a>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-{{ issue.priority }}">{{ issue.priority }}</span>
+                                {% if issue.assignee %}
+                                <small class="text-muted">{{ issue.assignee.username }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center">No issues</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- In Progress -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">In Progress ({{ in_progress_issues.count }})</h6>
+                </div>
+                <div class="card-body" style="min-height: 400px;">
+                    {% for issue in in_progress_issues %}
+                    <div class="card mb-2">
+                        <div class="card-body p-2">
+                            <a href="{% url 'issue_detail' issue.id %}" class="text-decoration-none">
+                                <small class="text-muted">{{ issue.project.key }}-{{ issue.id }}</small>
+                                <h6 class="mb-1">{{ issue.title|truncatewords:5 }}</h6>
+                            </a>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-{{ issue.priority }}">{{ issue.priority }}</span>
+                                {% if issue.assignee %}
+                                <small class="text-muted">{{ issue.assignee.username }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center">No issues</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">Completed ({{ completed_issues.count }})</h6>
+                </div>
+                <div class="card-body" style="min-height: 400px;">
+                    {% for issue in completed_issues %}
+                    <div class="card mb-2">
+                        <div class="card-body p-2">
+                            <a href="{% url 'issue_detail' issue.id %}" class="text-decoration-none">
+                                <small class="text-muted">{{ issue.project.key }}-{{ issue.id }}</small>
+                                <h6 class="mb-1">{{ issue.title|truncatewords:5 }}</h6>
+                            </a>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-{{ issue.priority }}">{{ issue.priority }}</span>
+                                {% if issue.assignee %}
+                                <small class="text-muted">{{ issue.assignee.username }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center">No issues</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

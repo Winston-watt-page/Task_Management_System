@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ issue.project.key }}-{{ issue.id }} - {{ issue.title }} - JIRA Clone{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <!-- Issue Header -->
+            <div class="mb-3">
+                <h6 class="text-muted">{{ issue.project.key }}-{{ issue.id }}</h6>
+                <h2>{{ issue.title }}</h2>
+            </div>
+
+            <!-- Issue Details -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Description</h5>
+                    <p class="card-text">{{ issue.description|default:"No description provided."|linebreaks }}</p>
+                </div>
+            </div>
+
+            <!-- Comments -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Comments ({{ comments.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% for comment in comments %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ comment.user.get_full_name|default:comment.user.username }}</strong>
+                            <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                        </div>
+                        <p class="mb-0 mt-1">{{ comment.content|linebreaks }}</p>
+                        <hr>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No comments yet.</p>
+                    {% endfor %}
+
+                    <!-- Add Comment Form -->
+                    <form method="post" action="{% url 'issue_add_comment' issue.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Add a comment</label>
+                            <textarea class="form-control" id="content" name="content" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-chat"></i> Add Comment
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% for log in activity_logs %}
+                    <div class="mb-2">
+                        <small>
+                            <strong>{{ log.user.username }}</strong> {{ log.action }}
+                            {% if log.field_changed %}
+                            <span class="badge bg-secondary">{{ log.field_changed }}</span>
+                            from <code>{{ log.old_value }}</code> to <code>{{ log.new_value }}</code>
+                            {% endif %}
+                            <span class="text-muted">- {{ log.created_at|timesince }} ago</span>
+                        </small>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted mb-0">No activity recorded yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Issue Status -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Status</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'issue_update_status' issue.id %}">
+                        {% csrf_token %}
+                        <select class="form-select" name="status" onchange="this.form.submit()">
+                            <option value="todo" {% if issue.status == 'todo' %}selected{% endif %}>To Do</option>
+                            <option value="in_progress" {% if issue.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="in_review" {% if issue.status == 'in_review' %}selected{% endif %}>In Review</option>
+                            <option value="completed" {% if issue.status == 'completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Issue Details -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <small class="text-muted">Type:</small><br>
+                        <span class="badge bg-info">{{ issue.issue_type }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Priority:</small><br>
+                        <span class="badge {% if issue.priority == 'critical' %}bg-danger{% elif issue.priority == 'high' %}bg-warning{% else %}bg-secondary{% endif %}">
+                            {{ issue.priority|upper }}
+                        </span>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Assignee:</small><br>
+                        {{ issue.assignee.get_full_name|default:issue.assignee.username|default:"Unassigned" }}
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Reporter:</small><br>
+                        {{ issue.reporter.get_full_name|default:issue.reporter.username }}
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Sprint:</small><br>
+                        {% if issue.sprint %}
+                        <a href="{% url 'sprint_detail' issue.sprint.id %}">{{ issue.sprint.name }}</a>
+                        {% else %}
+                        <span class="text-muted">No Sprint</span>
+                        {% endif %}
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Estimated Hours:</small><br>
+                        {{ issue.estimated_hours|default:"Not set" }}
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Actual Hours:</small><br>
+                        {{ issue.actual_hours }}
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Created:</small><br>
+                        {{ issue.created_at|date:"M d, Y H:i" }}
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Updated:</small><br>
+                        {{ issue.updated_at|date:"M d, Y H:i" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Due Date (Assignee can edit) -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-calendar-event"></i> Due Date</h6>
+                </div>
+                <div class="card-body">
+                    {% if issue.assignee == request.user %}
+                    <form method="post" action="{% url 'issue_update_due_date' issue.id %}">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            <input type="date" class="form-control" name="due_date" value="{{ issue.due_date|date:'Y-m-d' }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-check"></i> Update Due Date
+                        </button>
+                    </form>
+                    {% else %}
+                    <p class="mb-0">
+                        {% if issue.due_date %}
+                        <strong>{{ issue.due_date|date:"M d, Y" }}</strong>
+                        {% else %}
+                        <span class="text-muted">Not set</span>
+                        {% endif %}
+                    </p>
+                    <small class="text-muted">Only the assignee can set the due date</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Log Time -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-clock"></i> Log Time</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'issue_log_time' issue.id %}">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            <label for="hours_spent" class="form-label">Hours</label>
+                            <input type="number" step="0.5" class="form-control" id="hours_spent" name="hours_spent" required>
+                        </div>
+                        <div class="mb-2">
+                            <label for="date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="date" name="date" value="{{ today }}" required>
+                        </div>
+                        <div class="mb-2">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-plus"></i> Log Time
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

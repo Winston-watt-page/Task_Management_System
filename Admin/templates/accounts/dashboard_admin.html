@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card card-custom text-white" style="background-color: #0052CC;">
+                <div class="card-body">
+                    <h6 class="card-title">Total Projects</h6>
+                    <h2>{{ total_projects }}</h2>
+                    <a href="{% url 'project_list' %}" class="text-white"><small>View all <i class="bi bi-arrow-right"></i></small></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-custom text-white" style="background-color: #00875A;">
+                <div class="card-body">
+                    <h6 class="card-title">Total Users</h6>
+                    <h2>{{ total_users }}</h2>
+                    <a href="{% url 'user_list' %}" class="text-white"><small>Manage users <i class="bi bi-arrow-right"></i></small></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-custom text-white" style="background-color: #FF991F;">
+                <div class="card-body">
+                    <h6 class="card-title">Active Sprints</h6>
+                    <h2>{{ active_sprints }}</h2>
+                    <a href="{% url 'sprint_list' %}" class="text-white"><small>View sprints <i class="bi bi-arrow-right"></i></small></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-custom text-white" style="background-color: #172B4D;">
+                <div class="card-body">
+                    <h6 class="card-title">Total Issues</h6>
+                    <h2>{{ total_issues }}</h2>
+                    <a href="{% url 'issue_list' %}" class="text-white"><small>View issues <i class="bi bi-arrow-right"></i></small></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-lightning-fill"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'project_create' %}" class="btn btn-primary btn-primary-custom me-2">
+                        <i class="bi bi-plus-circle"></i> Create Project
+                    </a>
+                    <a href="{% url 'user_create' %}" class="btn btn-success me-2">
+                        <i class="bi bi-person-plus"></i> Add User
+                    </a>
+                    <a href="{% url 'sprint_create' %}" class="btn btn-info text-white me-2">
+                        <i class="bi bi-calendar-plus"></i> Create Sprint
+                    </a>
+                    <a href="{% url 'admin_backlog' %}" class="btn btn-warning">
+                        <i class="bi bi-list-task"></i> View Backlog
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Projects -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-folder"></i> Recent Projects</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_projects %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Key</th>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Created By</th>
+                                        <th>Created At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for project in recent_projects %}
+                                    <tr>
+                                        <td><strong>{{ project.key }}</strong></td>
+                                        <td>{{ project.name }}</td>
+                                        <td><span class="badge bg-success">{{ project.get_status_display }}</span></td>
+                                        <td>{{ project.created_by.username }}</td>
+                                        <td>{{ project.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-primary">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No projects yet. <a href="{% url 'project_create' %}">Create your first project</a></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

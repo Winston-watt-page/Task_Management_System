@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}TL Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="bi bi-person-badge"></i> Team Lead Dashboard</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card card-custom">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">My Sprints</h6>
+                    <h2>{{ my_sprints.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card card-custom">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Active Sprints</h6>
+                    <h2>{{ active_sprints.count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card card-custom">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-calendar-event"></i> My Sprints</h5>
+        </div>
+        <div class="card-body">
+            {% if my_sprints %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Sprint Name</th>
+                                <th>Project</th>
+                                <th>Status</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sprint in my_sprints %}
+                            <tr>
+                                <td><strong>{{ sprint.name }}</strong></td>
+                                <td>{{ sprint.project.name }}</td>
+                                <td>
+                                    {% if sprint.status == 'planning' %}
+                                        <span class="badge bg-secondary">Planning</span>
+                                    {% elif sprint.status == 'active' %}
+                                        <span class="badge bg-primary">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ sprint.start_date|default:"Not started" }}</td>
+                                <td>{{ sprint.end_date|default:"N/A" }}</td>
+                                <td>
+                                    <a href="{% url 'sprint_detail' sprint.id %}" class="btn btn-sm btn-info">View</a>
+                                    {% if sprint.status == 'planning' %}
+                                        <a href="{% url 'sprint_start' sprint.id %}" class="btn btn-sm btn-success">Start</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No sprints assigned yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}My Issues - JIRA Clone{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-person-check"></i> My Issues</h2>
+        <a href="{% url 'issue_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create Issue
+        </a>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="row">
+        <!-- To Do -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">To Do</h5>
+                </div>
+                <div class="card-body" style="min-height: 500px;">
+                    {% for issue in issues %}
+                    {% if issue.status == 'todo' %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <a href="{% url 'issue_detail' issue.id %}" class="text-decoration-none">
+                                <h6 class="card-title">
+                                    <small class="text-muted">{{ issue.project.key }}-{{ issue.id }}</small><br>
+                                    {{ issue.title }}
+                                </h6>
+                            </a>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge {% if issue.priority == 'critical' %}bg-danger{% elif issue.priority == 'high' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ issue.priority }}
+                                </span>
+                                <span class="badge bg-info">{{ issue.issue_type }}</span>
+                            </div>
+                            {% if issue.sprint %}
+                            <small class="text-muted">{{ issue.sprint.name }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- In Progress -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">In Progress</h5>
+                </div>
+                <div class="card-body" style="min-height: 500px;">
+                    {% for issue in issues %}
+                    {% if issue.status == 'in_progress' %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <a href="{% url 'issue_detail' issue.id %}" class="text-decoration-none">
+                                <h6 class="card-title">
+                                    <small class="text-muted">{{ issue.project.key }}-{{ issue.id }}</small><br>
+                                    {{ issue.title }}
+                                </h6>
+                            </a>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge {% if issue.priority == 'critical' %}bg-danger{% elif issue.priority == 'high' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ issue.priority }}
+                                </span>
+                                <span class="badge bg-info">{{ issue.issue_type }}</span>
+                            </div>
+                            {% if issue.sprint %}
+                            <small class="text-muted">{{ issue.sprint.name }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Completed</h5>
+                </div>
+                <div class="card-body" style="min-height: 500px;">
+                    {% for issue in issues %}
+                    {% if issue.status == 'completed' %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <a href="{% url 'issue_detail' issue.id %}" class="text-decoration-none">
+                                <h6 class="card-title">
+                                    <small class="text-muted">{{ issue.project.key }}-{{ issue.id }}</small><br>
+                                    {{ issue.title }}
+                                </h6>
+                            </a>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge {% if issue.priority == 'critical' %}bg-danger{% elif issue.priority == 'high' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ issue.priority }}
+                                </span>
+                                <span class="badge bg-info">{{ issue.issue_type }}</span>
+                            </div>
+                            {% if issue.sprint %}
+                            <small class="text-muted">{{ issue.sprint.name }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not issues %}
+    <div class="alert alert-info mt-3">
+        <i class="bi bi-info-circle"></i> You don't have any issues assigned to you yet.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

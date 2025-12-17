@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Group{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4"><i class="bi bi-plus-circle"></i> Create New Group</h2>
+            
+            <div class="card card-custom">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Group Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   placeholder="e.g., Admin, TL, Scrum Master, Developer, Tester" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        
+                        <h5 class="mb-3">Permissions</h5>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="can_create_projects" name="can_create_projects">
+                            <label class="form-check-label" for="can_create_projects">
+                                Can create projects
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="can_manage_users" name="can_manage_users">
+                            <label class="form-check-label" for="can_manage_users">
+                                Can manage users
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="can_create_sprints" name="can_create_sprints">
+                            <label class="form-check-label" for="can_create_sprints">
+                                Can create sprints
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="can_start_sprints" name="can_start_sprints">
+                            <label class="form-check-label" for="can_start_sprints">
+                                Can start sprints
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="can_assign_tasks" name="can_assign_tasks">
+                            <label class="form-check-label" for="can_assign_tasks">
+                                Can assign tasks
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="can_update_any_task" name="can_update_any_task">
+                            <label class="form-check-label" for="can_update_any_task">
+                                Can update any task
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'group_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-primary-custom">
+                                <i class="bi bi-check-circle"></i> Create Group
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
