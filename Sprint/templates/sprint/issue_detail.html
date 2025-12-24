@@ -91,8 +91,10 @@
                         <select class="form-select" name="status" onchange="this.form.submit()">
                             <option value="todo" {% if issue.status == 'todo' %}selected{% endif %}>To Do</option>
                             <option value="in_progress" {% if issue.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-                            <option value="in_review" {% if issue.status == 'in_review' %}selected{% endif %}>In Review</option>
                             <option value="completed" {% if issue.status == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="code_review" {% if issue.status == 'code_review' %}selected{% endif %}>Code Review</option>
+                            <option value="testing" {% if issue.status == 'testing' %}selected{% endif %}>Testing</option>
+                            <option value="done" {% if issue.status == 'done' %}selected{% endif %}>Done</option>
                         </select>
                     </form>
                 </div>
@@ -145,6 +147,62 @@
                     <div class="mb-2">
                         <small class="text-muted">Updated:</small><br>
                         {{ issue.updated_at|date:"M d, Y H:i" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Review & Testing Status -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><span class="material-icons md-18" style="vertical-align: middle;">verified</span> Code Review & Testing</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Code Review Status -->
+                    <div class="mb-3">
+                        <small class="text-muted"><strong>Code Review:</strong></small><br>
+                        <span class="badge 
+                            {% if issue.code_review_status == 'approved' %}bg-success
+                            {% elif issue.code_review_status == 'rejected' %}bg-danger
+                            {% elif issue.code_review_status == 'in_review' %}bg-info
+                            {% else %}bg-secondary{% endif %}">
+                            {{ issue.get_code_review_status_display }}
+                        </span>
+                        {% if issue.code_reviewer %}
+                        <br><small class="text-muted">Reviewer: {{ issue.code_reviewer.username }}</small>
+                        {% endif %}
+                        {% if issue.code_review_completed_at %}
+                        <br><small class="text-muted">Completed: {{ issue.code_review_completed_at|date:"M d, Y H:i" }}</small>
+                        {% endif %}
+                        {% if issue.code_review_notes %}
+                        <div class="mt-2 p-2 bg-light rounded">
+                            <small><strong>Notes:</strong> {{ issue.code_review_notes }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    <!-- Testing Status -->
+                    <div class="mb-0">
+                        <small class="text-muted"><strong>Testing:</strong></small><br>
+                        <span class="badge 
+                            {% if issue.testing_status == 'passed' %}bg-success
+                            {% elif issue.testing_status == 'failed' %}bg-danger
+                            {% elif issue.testing_status == 'in_testing' %}bg-info
+                            {% else %}bg-secondary{% endif %}">
+                            {{ issue.get_testing_status_display }}
+                        </span>
+                        {% if issue.tester %}
+                        <br><small class="text-muted">Tester: {{ issue.tester.username }}</small>
+                        {% endif %}
+                        {% if issue.testing_completed_at %}
+                        <br><small class="text-muted">Completed: {{ issue.testing_completed_at|date:"M d, Y H:i" }}</small>
+                        {% endif %}
+                        {% if issue.testing_notes %}
+                        <div class="mt-2 p-2 bg-light rounded">
+                            <small><strong>Notes:</strong> {{ issue.testing_notes }}</small>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><span class="material-icons" style="vertical-align: middle;">notifications</span> Notifications</h2>
+        {% if unread_count > 0 %}
+        <a href="{% url 'mark_all_notifications_read' %}" class="btn btn-primary">
+            <span class="material-icons md-18" style="vertical-align: middle;">done_all</span> Mark All as Read
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card card-custom">
+        <div class="card-body">
+            {% if notifications %}
+                <div class="list-group">
+                    {% for notification in notifications %}
+                    <div class="list-group-item {% if not notification.is_read %}bg-light border-start border-primary border-4{% endif %}">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="material-icons text-primary me-2">
+                                        {% if notification.notification_type == 'task_assigned' or notification.notification_type == 'code_review_assigned' or notification.notification_type == 'testing_assigned' %}
+                                            assignment_ind
+                                        {% elif notification.notification_type == 'code_review_approved' or notification.notification_type == 'testing_passed' %}
+                                            check_circle
+                                        {% elif notification.notification_type == 'code_review_rejected' or notification.notification_type == 'testing_failed' %}
+                                            cancel
+                                        {% else %}
+                                            info
+                                        {% endif %}
+                                    </span>
+                                    <h6 class="mb-0">{{ notification.get_notification_type_display }}</h6>
+                                </div>
+                                <p class="mb-2">{{ notification.message }}</p>
+                                <div class="d-flex align-items-center text-muted small">
+                                    <span class="me-3">
+                                        <span class="material-icons md-18" style="vertical-align: middle;">person</span>
+                                        {% if notification.sender %}{{ notification.sender.username }}{% else %}System{% endif %}
+                                    </span>
+                                    <span class="me-3">
+                                        <span class="material-icons md-18" style="vertical-align: middle;">access_time</span>
+                                        {{ notification.created_at|date:"M d, Y H:i" }}
+                                    </span>
+                                    {% if notification.issue %}
+                                    <a href="{% url 'issue_detail' notification.issue.id %}" class="btn btn-sm btn-outline-primary">
+                                        View Issue
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if not notification.is_read %}
+                            <div class="ms-3">
+                                <a href="{% url 'mark_notification_read' notification.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <span class="material-icons md-18">done</span>
+                                </a>
+                            </div>
+                            {% else %}
+                            <div class="ms-3">
+                                <span class="badge bg-success">Read</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <span class="material-icons" style="font-size: 64px; color: #ccc;">notifications_none</span>
+                    <p class="text-muted mt-3">No notifications yet</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

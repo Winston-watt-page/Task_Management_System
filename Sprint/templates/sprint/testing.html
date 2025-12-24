@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+
+{% block title %}Testing Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><span class="material-icons" style="vertical-align: middle;">bug_report</span> Testing Dashboard</h2>
+    </div>
+
+    {% if is_admin_or_scrum %}
+    <!-- Pending Sprint Testing Section -->
+    <div class="card card-custom mb-4">
+        <div class="card-header" style="background-color: #FF6B35; color: white;">
+            <h5 class="mb-0"><span class="material-icons" style="vertical-align: middle;">event</span> Sprints Pending Testing</h5>
+        </div>
+        <div class="card-body">
+            {% if pending_sprint_testing %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Sprint</th>
+                                <th>Project</th>
+                                <th>Team Lead</th>
+                                <th>Code Reviewer</th>
+                                <th>Approved Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sprint in pending_sprint_testing %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'sprint_detail' sprint.id %}" class="text-decoration-none">
+                                        <strong>{{ sprint.name }}</strong>
+                                    </a>
+                                </td>
+                                <td>{{ sprint.project.name }}</td>
+                                <td>
+                                    {% if sprint.team_lead %}
+                                        <span class="badge bg-info">{{ sprint.team_lead.username }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No TL</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sprint.code_reviewer %}
+                                        <span class="badge bg-success">{{ sprint.code_reviewer.username }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sprint.code_review_completed_at %}
+                                        {{ sprint.code_review_completed_at|date:"M d, Y H:i" }}
+                                    {% else %}
+                                        {{ sprint.updated_at|date:"M d, Y H:i" }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignSprintTesterModal{{ sprint.id }}">
+                                        <span class="material-icons md-18">person_add</span> Assign Tester
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Assign Sprint Tester Modal -->
+                            <div class="modal fade" id="assignSprintTesterModal{{ sprint.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Assign Sprint Tester</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'assign_sprint_tester' sprint.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <p><strong>Sprint:</strong> {{ sprint.name }}</p>
+                                                <p><strong>Project:</strong> {{ sprint.project.name }}</p>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Select Tester</label>
+                                                    <select name="tester_id" class="form-select" required>
+                                                        <option value="">Choose a tester...</option>
+                                                        {% for u in users %}
+                                                            <option value="{{ u.id }}">{{ u.username }} - {{ u.first_name }} {{ u.last_name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Assign</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No sprints pending testing assignment.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pending Testing Section -->
+    <div class="card card-custom mb-4">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0"><span class="material-icons" style="vertical-align: middle;">pending</span> Pending Testing</h5>
+        </div>
+        <div class="card-body">
+            {% if pending_testing %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Issue</th>
+                                <th>Project</th>
+                                <th>Developer</th>
+                                <th>Code Reviewer</th>
+                                <th>Approved Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for issue in pending_testing %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'issue_detail' issue.id %}" class="text-decoration-none">
+                                        {{ issue.project.key }}-{{ issue.id }}: {{ issue.title }}
+                                    </a>
+                                </td>
+                                <td>{{ issue.project.name }}</td>
+                                <td>
+                                    {% if issue.assignee %}
+                                        <span class="badge bg-info">{{ issue.assignee.username }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if issue.code_reviewer %}
+                                        <span class="badge bg-success">{{ issue.code_reviewer.username }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if issue.code_review_completed_at %}
+                                        {{ issue.code_review_completed_at|date:"M d, Y H:i" }}
+                                    {% else %}
+                                        {{ issue.updated_at|date:"M d, Y H:i" }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignTesterModal{{ issue.id }}">
+                                        <span class="material-icons md-18">person_add</span> Assign Tester
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Assign Tester Modal -->
+                            <div class="modal fade" id="assignTesterModal{{ issue.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Assign Tester</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'assign_tester' issue.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <p><strong>Issue:</strong> {{ issue.title }}</p>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Select Tester</label>
+                                                    <select name="tester_id" class="form-select" required>
+                                                        <option value="">Choose a tester...</option>
+                                                        {% for u in users %}
+                                                            <option value="{{ u.id }}">{{ u.username }} - {{ u.first_name }} {{ u.last_name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Assign</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No issues pending testing assignment.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- In Testing Section -->
+    <div class="card card-custom mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><span class="material-icons" style="vertical-align: middle;">science</span> In Testing</h5>
+        </div>
+        <div class="card-body">
+            {% if in_testing %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Issue</th>
+                                <th>Project</th>
+                                <th>Developer</th>
+                                <th>Tester</th>
+                                <th>Assigned Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for issue in in_testing %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'issue_detail' issue.id %}" class="text-decoration-none">
+                                        {{ issue.project.key }}-{{ issue.id }}: {{ issue.title }}
+                                    </a>
+                                </td>
+                                <td>{{ issue.project.name }}</td>
+                                <td>
+                                    {% if issue.assignee %}
+                                        <span class="badge bg-info">{{ issue.assignee.username }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if issue.tester %}
+                                        <span class="badge bg-primary">{{ issue.tester.username }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ issue.updated_at|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No issues currently in testing.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sprints In Testing Section -->
+    <div class="card card-custom mb-4">
+        <div class="card-header" style="background-color: #17a2b8; color: white;">
+            <h5 class="mb-0"><span class="material-icons" style="vertical-align: middle;">event_note</span> Sprints In Testing</h5>
+        </div>
+        <div class="card-body">
+            {% if sprints_in_testing %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Sprint</th>
+                                <th>Project</th>
+                                <th>Team Lead</th>
+                                <th>Tester</th>
+                                <th>Assigned Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sprint in sprints_in_testing %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'sprint_detail' sprint.id %}" class="text-decoration-none">
+                                        <strong>{{ sprint.name }}</strong>
+                                    </a>
+                                </td>
+                                <td>{{ sprint.project.name }}</td>
+                                <td>
+                                    {% if sprint.team_lead %}
+                                        <span class="badge bg-info">{{ sprint.team_lead.username }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No TL</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sprint.tester %}
+                                        <span class="badge bg-primary">{{ sprint.tester.username }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ sprint.updated_at|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No sprints currently in testing.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- My Testing Tasks Section -->
+    <div class="card card-custom mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><span class="material-icons" style="vertical-align: middle;">assignment_turned_in</span> My Testing Tasks</h5>
+        </div>
+        <div class="card-body">
+            {% if my_testing %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Issue</th>
+                                <th>Project</th>
+                                <th>Developer</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for issue in my_testing %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'issue_detail' issue.id %}" class="text-decoration-none">
+                                        {{ issue.project.key }}-{{ issue.id }}: {{ issue.title }}
+                                    </a>
+                                </td>
+                                <td>{{ issue.project.name }}</td>
+                                <td>
+                                    {% if issue.assignee %}
+                                        <span class="badge bg-info">{{ issue.assignee.username }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">{{ issue.get_testing_status_display }}</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#completeTestingModal{{ issue.id }}">
+                                        <span class="material-icons md-18">check_circle</span> Complete Testing
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Complete Testing Modal -->
+                            <div class="modal fade" id="completeTestingModal{{ issue.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Complete Testing</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'complete_testing' issue.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <p><strong>Issue:</strong> {{ issue.title }}</p>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Testing Status</label>
+                                                    <select name="testing_status" class="form-select" required>
+                                                        <option value="">Choose status...</option>
+                                                        <option value="passed">✓ Passed</option>
+                                                        <option value="failed">✗ Failed</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Testing Notes</label>
+                                                    <textarea name="testing_notes" class="form-control" rows="4" placeholder="Add your testing notes and results..."></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-success">Submit Result</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">You have no testing tasks assigned.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- My Sprint Testing Tasks Section -->
+    <div class="card card-custom mb-4">
+        <div class="card-header" style="background-color: #28a745; color: white;">
+            <h5 class="mb-0"><span class="material-icons" style="vertical-align: middle;">event_available</span> My Sprint Testing Tasks</h5>
+        </div>
+        <div class="card-body">
+            {% if my_sprint_testing %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Sprint</th>
+                                <th>Project</th>
+                                <th>Team Lead</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sprint in my_sprint_testing %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'sprint_detail' sprint.id %}" class="text-decoration-none">
+                                        <strong>{{ sprint.name }}</strong>
+                                    </a>
+                                </td>
+                                <td>{{ sprint.project.name }}</td>
+                                <td>
+                                    {% if sprint.team_lead %}
+                                        <span class="badge bg-info">{{ sprint.team_lead.username }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No TL</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">{{ sprint.get_testing_status_display }}</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#completeSprintTestingModal{{ sprint.id }}">
+                                        <span class="material-icons md-18">check_circle</span> Complete Testing
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Complete Sprint Testing Modal -->
+                            <div class="modal fade" id="completeSprintTestingModal{{ sprint.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Complete Sprint Testing</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'complete_sprint_testing' sprint.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <p><strong>Sprint:</strong> {{ sprint.name }}</p>
+                                                <p><strong>Project:</strong> {{ sprint.project.name }}</p>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Testing Status</label>
+                                                    <select name="testing_status" class="form-select" required>
+                                                        <option value="">Choose status...</option>
+                                                        <option value="passed">✓ Passed</option>
+                                                        <option value="failed">✗ Failed</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Testing Notes</label>
+                                                    <textarea name="testing_notes" class="form-control" rows="4" placeholder="Add your sprint testing notes and results..."></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-success">Submit Result</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">You have no sprint testing tasks assigned.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -7,6 +7,23 @@ class Sprint(models.Model):
         ('planning', 'Planning'),
         ('active', 'Active'),
         ('completed', 'Completed'),
+        ('code_review', 'Code Review'),
+        ('testing', 'Testing'),
+        ('done', 'Done'),
+    ]
+    
+    CODE_REVIEW_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_review', 'In Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    TESTING_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_testing', 'In Testing'),
+        ('passed', 'Passed'),
+        ('failed', 'Failed'),
     ]
     
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='sprints')
@@ -21,6 +38,18 @@ class Sprint(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_sprints')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Code Review fields
+    code_reviewer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='code_review_sprints')
+    code_review_status = models.CharField(max_length=20, choices=CODE_REVIEW_STATUS_CHOICES, default='pending')
+    code_review_completed_at = models.DateTimeField(null=True, blank=True)
+    code_review_notes = models.TextField(blank=True, null=True)
+    
+    # Testing fields
+    tester = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='testing_sprints')
+    testing_status = models.CharField(max_length=20, choices=TESTING_STATUS_CHOICES, default='pending')
+    testing_completed_at = models.DateTimeField(null=True, blank=True)
+    testing_notes = models.TextField(blank=True, null=True)
     
     def __str__(self):
         return f"{self.project.key} - {self.name}"
@@ -50,6 +79,23 @@ class Issue(models.Model):
         ('todo', 'To Do'),
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
+        ('code_review', 'Code Review'),
+        ('testing', 'Testing'),
+        ('done', 'Done'),
+    ]
+    
+    CODE_REVIEW_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_review', 'In Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    TESTING_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_testing', 'In Testing'),
+        ('passed', 'Passed'),
+        ('failed', 'Failed'),
     ]
     
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='issues')
@@ -70,6 +116,18 @@ class Issue(models.Model):
     assignee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_issues')
     reporter = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='reported_issues')
     due_date = models.DateField(null=True, blank=True)
+    
+    # Code Review fields
+    code_reviewer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='code_review_issues')
+    code_review_status = models.CharField(max_length=20, choices=CODE_REVIEW_STATUS_CHOICES, default='pending')
+    code_review_completed_at = models.DateTimeField(null=True, blank=True)
+    code_review_notes = models.TextField(blank=True, null=True)
+    
+    # Testing fields
+    tester = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='testing_issues')
+    testing_status = models.CharField(max_length=20, choices=TESTING_STATUS_CHOICES, default='pending')
+    testing_completed_at = models.DateTimeField(null=True, blank=True)
+    testing_notes = models.TextField(blank=True, null=True)
     
     labels = models.ManyToManyField('Projects.Label', blank=True, related_name='issues')
     
@@ -98,6 +156,40 @@ class Comment(models.Model):
         ordering = ['created_at']
         verbose_name = 'Comment'
         verbose_name_plural = 'Comments'
+
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('task_assigned', 'Task Assigned'),
+        ('code_review_assigned', 'Code Review Assigned'),
+        ('testing_assigned', 'Testing Assigned'),
+        ('task_completed', 'Task Completed'),
+        ('code_review_completed', 'Code Review Completed'),
+        ('testing_completed', 'Testing Completed'),
+        ('code_review_approved', 'Code Review Approved'),
+        ('code_review_rejected', 'Code Review Rejected'),
+        ('testing_passed', 'Testing Passed'),
+        ('testing_failed', 'Testing Failed'),
+        ('issue_updated', 'Issue Updated'),
+        ('sprint_updated', 'Sprint Updated'),
+    ]
+    
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_notifications', null=True, blank=True)
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPES)
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
+    sprint = models.ForeignKey(Sprint, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.notification_type} - {self.recipient.username}"
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
 
 class Attachment(models.Model):
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name='attachments')
